@@ -7,7 +7,7 @@ from fetch_page import fetch_page
 from extract_content import extract_basic_seo
 from extract_schema import extract_schema_types
 from build_report import build_markdown_report
-from screenshot import capture_desktop_screenshot
+from screenshot import capture_screenshots
 
 
 def normalize_domain(url: str) -> str:
@@ -47,9 +47,11 @@ def main():
         try:
             html_path = fetch_page(page_url, raw_html_dir, slug)
 
-            screenshot_path = raw_screenshot_dir / f"{slug}_desktop.png"
-            capture_desktop_screenshot(page_url, screenshot_path)
+            desktop_path = raw_screenshot_dir / f"{slug}_desktop.png"
+            mobile_path = raw_screenshot_dir / f"{slug}_mobile.png"
 
+            capture_screenshots(page_url, desktop_path, mobile_path)
+            
             seo_summary = extract_basic_seo(html_path, page_url)
             schema_summary = extract_schema_types(html_path)
 
