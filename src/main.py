@@ -2,7 +2,8 @@ import sys
 import json
 from pathlib import Path
 
-from fetch_page import fetch_homepage
+from crawl import discover_top_pages
+from fetch_page import fetch_page
 from extract_content import extract_basic_seo
 from extract_schema import extract_schema_types
 from build_report import build_markdown_report
@@ -32,34 +33,111 @@ def main():
     report_dir.mkdir(parents=True, exist_ok=True)
     raw_schema_dir.mkdir(parents=True, exist_ok=True)
 
-    html_path = fetch_homepage(url, raw_html_dir)
+    pages = discover_top_pages(url, max_pages=5)
 
-    summary = extract_basic_seo(html_path, url)
-    schema_summary = extract_schema_types(html_path)
+    all_page_summaries = []
 
-    summary["schema"] = {
-        "schema_found": schema_summary["schema_found"],
-        "schema_block_count": schema_summary["schema_block_count"],
-        "schema_types": schema_summary["schema_types"],
-        "has_organization": schema_summary["has_organization"],
-        "has_local_business": schema_summary["has_local_business"],
-        "has_website": schema_summary["has_website"],
-        "has_breadcrumb": schema_summary["has_breadcrumb"],
-        "has_faq": schema_summary["has_faq"],
+    for page in pages:
+        page_url = page["url"]
+        slug = page["slug"]
+
+        try:
+            html_path = fetch_page(page_url, raw_html_dir, slug)
+
+            seo_summary = extract_basic_seo(html_path, page_url)
+            schema_summary = extract_schema_types(html_path)
+
+            seo_summary["slug"] = slug
+            seo_summary["schema"] = {
+                "schema_found": schema_summary["schema_found"],
+                "schema_block_count": schema_summary["schema_block_count"],
+                "schema_types": schema_summary["schema_types"],
+                "has_organization": schema_summary["has_organization"],
+                "has_local_business": schema_summary["has_local_business"],
+                "has_website": schema_summary["has_website"],
+                "has_breadcrumb": schema_summary["has_breadcrumb"],
+                "has_faq": schema_summary["has_faq"],
+            }
+
+            raw_schema_path = raw_schema_dir / f"{slug}_schema_blocks.json"
+            raw_schema_path.write_text(
+                json.dumps(schema_summary["raw_blocks"], indent=2),
+                encoding="utf-8"
+            )
+
+            all_page_summaries.append(seo_summary)
+
+        except Exception as e:
+            print(f"Skipping {page_url} due to error: {e}")
+
+    page_inventory_path = processed_dir / "page_inventory.json"
+    page_inventory_path.write_text(
+        json.dumps(all_page_summaries, indent=2),
+        encoding="utf-8"
+    )
+
+    site_summary = build_site_summary(all_page_summaries)
+    site_summary_path = processed_dir / "site_summary.json"
+    site_summary_path.write_text(
+        json.dumps(site_summary, indent=2),
+        encoding="utf-8"
+    )
+
+    # Keep homepage report for now
+    homepage_summary = next((p for p in all_page_summaries if p["slug"] == "home"), None)
+    if homepage_summary:
+        report_path = report_dir / "audit_report.md"
+        build_markdown_report(homepage_summary, report_path)
+        print(f"Saved markdown report to {report_path}")
+
+    print(f"Saved page inventory JSON to {page_inventory_path}")
+    print(f"Saved site summary JSON to {site_summary_path}")
+
+
+def build_site_summary(page_summaries: list[dict]) -> dict:
+    missing_titles = []
+    missing_meta_descriptions = []
+    missing_h1s = []
+    missing_canonicals = []
+    pages_without_schema = []
+    pages_without_local_business_schema = []
+    thin_pages = []
+
+    for page in page_summaries:
+        url = page["url"]
+        schema = page.get("schema", {})
+
+        if not page.get("title"):
+            missing_titles.append(url)
+
+        if not page.get("meta_description"):
+            missing_meta_descriptions.append(url)
+
+        if not page.get("h1"):
+            missing_h1s.append(url)
+
+        if not page.get("canonical"):
+            missing_canonicals.append(url)
+
+        if not schema.get("schema_found"):
+            pages_without_schema.append(url)
+
+        if schema.get("schema_found") and not schema.get("has_local_business"):
+            pages_without_local_business_schema.append(url)
+
+        if page.get("word_count", 0) < 250:
+            thin_pages.append(url)
+
+    return {
+        "total_pages_audited": len(page_summaries),
+        "missing_titles": missing_titles,
+        "missing_meta_descriptions": missing_meta_descriptions,
+        "missing_h1s": missing_h1s,
+        "missing_canonicals": missing_canonicals,
+        "pages_without_schema": pages_without_schema,
+        "pages_without_local_business_schema": pages_without_local_business_schema,
+        "thin_pages_under_250_words": thin_pages,
     }
-
-    summary_path = processed_dir / "homepage_summary.json"
-    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
-
-    raw_schema_path = raw_schema_dir / "home_schema_blocks.json"
-    raw_schema_path.write_text(json.dumps(schema_summary["raw_blocks"], indent=2), encoding="utf-8")
-
-    report_path = report_dir / "audit_report.md"
-    build_markdown_report(summary, report_path)
-
-    print(f"Saved summary JSON to {summary_path}")
-    print(f"Saved raw schema blocks to {raw_schema_path}")
-    print(f"Saved markdown report to {report_path}")
 
 
 if __name__ == "__main__":
