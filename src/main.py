@@ -4,7 +4,7 @@ from pathlib import Path
 
 from crawl import discover_top_pages
 from fetch_page import fetch_page
-from extract_content import extract_basic_seo
+from extract_content import extract_basic_seo, detect_location_mentions
 from extract_schema import extract_schema_types
 from build_report import build_markdown_report
 from screenshot import capture_screenshots
@@ -22,6 +22,9 @@ def main():
 
     url = sys.argv[1]
     domain = normalize_domain(url)
+
+    # Default local terms for now
+    location_terms = ["Marrickville", "Inner West", "Sydney", "Canterbury"]
 
     base_dir = Path("audits") / domain
     raw_html_dir = base_dir / "raw" / "html"
@@ -49,14 +52,16 @@ def main():
 
             desktop_path = raw_screenshot_dir / f"{slug}_desktop.png"
             mobile_path = raw_screenshot_dir / f"{slug}_mobile.png"
-
             capture_screenshots(page_url, desktop_path, mobile_path)
-            
+
             seo_summary = extract_basic_seo(html_path, page_url)
+            location_summary = detect_location_mentions(html_path, location_terms)
             schema_summary = extract_schema_types(html_path)
 
             seo_summary["slug"] = slug
-            seo_summary["desktop_screenshot"] = str(screenshot_path)
+            seo_summary["desktop_screenshot"] = str(desktop_path)
+            seo_summary["mobile_screenshot"] = str(mobile_path)
+            seo_summary["location_signals"] = location_summary
             seo_summary["schema"] = {
                 "schema_found": schema_summary["schema_found"],
                 "schema_block_count": schema_summary["schema_block_count"],
@@ -110,10 +115,12 @@ def build_site_summary(page_summaries: list[dict]) -> dict:
     pages_without_schema = []
     pages_without_local_business_schema = []
     thin_pages = []
+    pages_missing_all_location_terms = []
 
     for page in page_summaries:
         url = page["url"]
         schema = page.get("schema", {})
+        location_signals = page.get("location_signals", {})
 
         if not page.get("title"):
             missing_titles.append(url)
@@ -136,6 +143,10 @@ def build_site_summary(page_summaries: list[dict]) -> dict:
         if page.get("word_count", 0) < 250:
             thin_pages.append(url)
 
+        found_terms = location_signals.get("found_location_terms", [])
+        if len(found_terms) == 0:
+            pages_missing_all_location_terms.append(url)
+
     return {
         "total_pages_audited": len(page_summaries),
         "missing_titles": missing_titles,
@@ -145,6 +156,7 @@ def build_site_summary(page_summaries: list[dict]) -> dict:
         "pages_without_schema": pages_without_schema,
         "pages_without_local_business_schema": pages_without_local_business_schema,
         "thin_pages_under_250_words": thin_pages,
+        "pages_missing_all_location_terms": pages_missing_all_location_terms,
     }
 
 
