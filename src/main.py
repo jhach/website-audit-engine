@@ -7,6 +7,7 @@ from fetch_page import fetch_page
 from extract_content import extract_basic_seo
 from extract_schema import extract_schema_types
 from build_report import build_markdown_report
+from screenshot import capture_desktop_screenshot
 
 
 def normalize_domain(url: str) -> str:
@@ -27,11 +28,13 @@ def main():
     processed_dir = base_dir / "processed"
     report_dir = base_dir / "report"
     raw_schema_dir = base_dir / "raw" / "schema"
+    raw_screenshot_dir = base_dir / "raw" / "screenshots"
 
     raw_html_dir.mkdir(parents=True, exist_ok=True)
     processed_dir.mkdir(parents=True, exist_ok=True)
     report_dir.mkdir(parents=True, exist_ok=True)
     raw_schema_dir.mkdir(parents=True, exist_ok=True)
+    raw_screenshot_dir.mkdir(parents=True, exist_ok=True)
 
     pages = discover_top_pages(url, max_pages=5)
 
@@ -44,10 +47,14 @@ def main():
         try:
             html_path = fetch_page(page_url, raw_html_dir, slug)
 
+            screenshot_path = raw_screenshot_dir / f"{slug}_desktop.png"
+            capture_desktop_screenshot(page_url, screenshot_path)
+
             seo_summary = extract_basic_seo(html_path, page_url)
             schema_summary = extract_schema_types(html_path)
 
             seo_summary["slug"] = slug
+            seo_summary["desktop_screenshot"] = str(screenshot_path)
             seo_summary["schema"] = {
                 "schema_found": schema_summary["schema_found"],
                 "schema_block_count": schema_summary["schema_block_count"],
@@ -83,7 +90,6 @@ def main():
         encoding="utf-8"
     )
 
-    # Keep homepage report for now
     homepage_summary = next((p for p in all_page_summaries if p["slug"] == "home"), None)
     if homepage_summary:
         report_path = report_dir / "audit_report.md"
