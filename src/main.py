@@ -8,6 +8,7 @@ from extract_content import extract_basic_seo, detect_location_mentions
 from extract_schema import extract_schema_types
 from build_report import build_markdown_report
 from screenshot import capture_screenshots
+from utils import load_location_terms
 
 
 def normalize_domain(url: str) -> str:
@@ -22,9 +23,7 @@ def main():
 
     url = sys.argv[1]
     domain = normalize_domain(url)
-
-    # Default local terms for now
-    location_terms = ["Marrickville", "Inner West", "Sydney", "Canterbury"]
+    location_config = load_location_terms()
 
     base_dir = Path("audits") / domain
     raw_html_dir = base_dir / "raw" / "html"
@@ -55,7 +54,7 @@ def main():
             capture_screenshots(page_url, desktop_path, mobile_path)
 
             seo_summary = extract_basic_seo(html_path, page_url)
-            location_summary = detect_location_mentions(html_path, location_terms)
+            location_summary = detect_location_mentions(html_path, location_config)
             schema_summary = extract_schema_types(html_path)
 
             seo_summary["slug"] = slug
@@ -70,7 +69,7 @@ def main():
                 "has_local_business": schema_summary["has_local_business"],
                 "has_website": schema_summary["has_website"],
                 "has_breadcrumb": schema_summary["has_breadcrumb"],
-                "has_faq": schema_summary["has_faq"],
+                "has_faq": schema_summary["has_faq"]
             }
 
             raw_schema_path = raw_schema_dir / f"{slug}_schema_blocks.json"
@@ -115,7 +114,9 @@ def build_site_summary(page_summaries: list[dict]) -> dict:
     pages_without_schema = []
     pages_without_local_business_schema = []
     thin_pages = []
-    pages_missing_all_location_terms = []
+    pages_missing_all_broad_terms = []
+    pages_missing_all_priority_suburbs = []
+    pages_missing_all_suburbs = []
 
     for page in page_summaries:
         url = page["url"]
@@ -143,9 +144,14 @@ def build_site_summary(page_summaries: list[dict]) -> dict:
         if page.get("word_count", 0) < 250:
             thin_pages.append(url)
 
-        found_terms = location_signals.get("found_location_terms", [])
-        if len(found_terms) == 0:
-            pages_missing_all_location_terms.append(url)
+        if not location_signals.get("has_any_broad_term", False):
+            pages_missing_all_broad_terms.append(url)
+
+        if not location_signals.get("has_any_priority_suburb", False):
+            pages_missing_all_priority_suburbs.append(url)
+
+        if not location_signals.get("has_any_suburb", False):
+            pages_missing_all_suburbs.append(url)
 
     return {
         "total_pages_audited": len(page_summaries),
@@ -156,7 +162,9 @@ def build_site_summary(page_summaries: list[dict]) -> dict:
         "pages_without_schema": pages_without_schema,
         "pages_without_local_business_schema": pages_without_local_business_schema,
         "thin_pages_under_250_words": thin_pages,
-        "pages_missing_all_location_terms": pages_missing_all_location_terms,
+        "pages_missing_all_broad_terms": pages_missing_all_broad_terms,
+        "pages_missing_all_priority_suburbs": pages_missing_all_priority_suburbs,
+        "pages_missing_all_suburbs": pages_missing_all_suburbs
     }
 
 

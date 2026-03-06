@@ -5,9 +5,12 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
     schema = summary.get("schema", {})
     location_signals = summary.get("location_signals", {})
 
-    location_mentions = location_signals.get("location_mentions", {})
-    found_terms = location_signals.get("found_location_terms", [])
-    missing_terms = location_signals.get("missing_location_terms", [])
+    broad_mentions = location_signals.get("broad_mentions", {})
+    priority_suburb_mentions = location_signals.get("priority_suburb_mentions", {})
+    found_broad_terms = location_signals.get("found_broad_terms", [])
+    found_priority_suburbs = location_signals.get("found_priority_suburbs", [])
+    missing_broad_terms = location_signals.get("missing_broad_terms", [])
+    missing_priority_suburbs = location_signals.get("missing_priority_suburbs", [])
 
     lines = [
         f"# Website Audit: {summary.get('url', 'Unknown URL')}",
@@ -27,18 +30,30 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
         "",
         "## Local Signals",
         "",
+        "### Broad Terms",
+        ""
     ]
 
-    if location_mentions:
-        for term, count in location_mentions.items():
-            lines.append(f"- **{term}:** {count} mention(s)")
-    else:
-        lines.append("- No location terms checked.")
+    for term, count in broad_mentions.items():
+        lines.append(f"- **{term}:** {count} mention(s)")
 
     lines.extend([
         "",
-        f"- **Found location terms:** {', '.join(found_terms) if found_terms else 'None'}",
-        f"- **Missing location terms:** {', '.join(missing_terms) if missing_terms else 'None'}",
+        f"- **Found broad terms:** {', '.join(found_broad_terms) if found_broad_terms else 'None'}",
+        f"- **Missing broad terms:** {', '.join(missing_broad_terms) if missing_broad_terms else 'None'}",
+        "",
+        "### Priority Suburbs",
+        ""
+    ])
+
+    for term, count in priority_suburb_mentions.items():
+        if count > 0:
+            lines.append(f"- **{term}:** {count} mention(s)")
+
+    lines.extend([
+        "",
+        f"- **Found priority suburbs:** {', '.join(found_priority_suburbs) if found_priority_suburbs else 'None'}",
+        f"- **Missing priority suburbs:** {', '.join(missing_priority_suburbs) if missing_priority_suburbs else 'None'}",
         "",
         "## Schema Summary",
         "",
@@ -52,7 +67,7 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
         f"- **Has FAQ schema:** {'Yes' if schema.get('has_faq') else 'No'}",
         "",
         "## Initial Notes",
-        "",
+        ""
     ])
 
     if not summary.get("title"):
@@ -69,8 +84,10 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
         lines.append("- Multiple H1 tags detected.")
     if not summary.get("canonical"):
         lines.append("- Missing canonical tag.")
-    if not found_terms:
-        lines.append("- No target local terms were detected on this page.")
+    if not found_broad_terms:
+        lines.append("- No broad local area terms were detected on this page.")
+    if not found_priority_suburbs:
+        lines.append("- No priority suburb terms were detected on this page.")
     if not schema.get("schema_found"):
         lines.append("- No JSON-LD schema found on the page.")
     if schema.get("schema_found") and not schema.get("has_local_business"):
@@ -82,8 +99,8 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
         "",
         "## Hatch Studio Opportunity",
         "",
-        "This site can likely improve search visibility, local relevance, and AI-readability by tightening on-page SEO, location targeting, and structured data.",
-        "",
+        "This site can likely improve search visibility, local relevance, and AI-readability by tightening on-page SEO, suburb targeting, and structured data.",
+        ""
     ])
 
     output_path.write_text("\n".join(lines), encoding="utf-8")

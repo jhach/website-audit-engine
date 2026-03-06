@@ -56,24 +56,48 @@ def extract_basic_seo(html_path: Path, url: str) -> dict:
     }
 
 
-def detect_location_mentions(html_path: Path, location_terms: list[str]) -> dict:
+def detect_location_mentions(html_path: Path, location_config: dict) -> dict:
     html = html_path.read_text(encoding="utf-8", errors="ignore").lower()
 
+    broad_terms = location_config.get("broad_terms", [])
+    priority_suburbs = location_config.get("priority_suburbs", [])
+    all_suburbs = location_config.get("all_suburbs", [])
+
+    broad_mentions = _count_term_mentions(html, broad_terms)
+    priority_suburb_mentions = _count_term_mentions(html, priority_suburbs)
+    all_suburb_mentions = _count_term_mentions(html, all_suburbs)
+
+    found_broad_terms = [term for term, count in broad_mentions.items() if count > 0]
+    found_priority_suburbs = [term for term, count in priority_suburb_mentions.items() if count > 0]
+    found_all_suburbs = [term for term, count in all_suburb_mentions.items() if count > 0]
+
+    missing_broad_terms = [term for term, count in broad_mentions.items() if count == 0]
+    missing_priority_suburbs = [term for term, count in priority_suburb_mentions.items() if count == 0]
+
+    return {
+        "broad_mentions": broad_mentions,
+        "priority_suburb_mentions": priority_suburb_mentions,
+        "all_suburb_mentions": all_suburb_mentions,
+        "found_broad_terms": found_broad_terms,
+        "found_priority_suburbs": found_priority_suburbs,
+        "found_all_suburbs": found_all_suburbs,
+        "missing_broad_terms": missing_broad_terms,
+        "missing_priority_suburbs": missing_priority_suburbs,
+        "has_any_broad_term": len(found_broad_terms) > 0,
+        "has_any_priority_suburb": len(found_priority_suburbs) > 0,
+        "has_any_suburb": len(found_all_suburbs) > 0
+    }
+
+
+def _count_term_mentions(html: str, terms: list[str]) -> dict:
     mentions = {}
 
-    for term in location_terms:
-        clean_term = term.strip().lower()
+    for term in terms:
+        clean_term = term.strip()
         if not clean_term:
             continue
 
-        count = html.count(clean_term)
+        count = html.count(clean_term.lower())
         mentions[term] = count
 
-    found_terms = [term for term, count in mentions.items() if count > 0]
-    missing_terms = [term for term, count in mentions.items() if count == 0]
-
-    return {
-        "location_mentions": mentions,
-        "found_location_terms": found_terms,
-        "missing_location_terms": missing_terms,
-    }
+    return mentions
