@@ -1,6 +1,7 @@
 import sys
 import json
 from pathlib import Path
+from pdf_report import build_pdf_report
 
 from crawl import discover_top_pages
 from fetch_page import fetch_page
@@ -102,11 +103,16 @@ def main():
     homepage_summary = next((p for p in all_page_summaries if p["slug"] == "home"), None)
     if homepage_summary:
         report_path = report_dir / "audit_report.md"
-        build_markdown_report(homepage_summary, report_path)
-        print(f"Saved markdown report to {report_path}")
+        pdf_path = report_dir / "audit_report.pdf"
 
-    print(f"Saved page inventory JSON to {page_inventory_path}")
-    print(f"Saved site summary JSON to {site_summary_path}")
+        build_markdown_report(homepage_summary, report_path)
+        build_pdf_report(homepage_summary, pdf_path)
+
+        print(f"Saved markdown report to {report_path}")
+        print(f"Saved PDF report to {pdf_path}")
+
+        print(f"Saved page inventory JSON to {page_inventory_path}")
+        print(f"Saved site summary JSON to {site_summary_path}")
 
 
 def build_site_summary(page_summaries: list[dict]) -> dict:
