@@ -5,6 +5,7 @@ from pathlib import Path
 from crawl import discover_top_pages
 from fetch_page import fetch_page
 from extract_content import extract_basic_seo, detect_location_mentions
+from trust_signals import detect_trust_signals
 from extract_schema import extract_schema_types
 from build_report import build_markdown_report
 from screenshot import capture_screenshots
@@ -56,11 +57,13 @@ def main():
             seo_summary = extract_basic_seo(html_path, page_url)
             location_summary = detect_location_mentions(html_path, location_config)
             schema_summary = extract_schema_types(html_path)
+            trust_summary = detect_trust_signals(html_path)
 
             seo_summary["slug"] = slug
             seo_summary["desktop_screenshot"] = str(desktop_path)
             seo_summary["mobile_screenshot"] = str(mobile_path)
             seo_summary["location_signals"] = location_summary
+            seo_summary["trust_signals"] = trust_summary
             seo_summary["schema"] = {
                 "schema_found": schema_summary["schema_found"],
                 "schema_block_count": schema_summary["schema_block_count"],
