@@ -13,9 +13,32 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     schema = summary.get("schema", {})
     location_signals = summary.get("location_signals", {})
     trust_signals = summary.get("trust_signals", {})
+    scorecard = summary.get("scorecard", {})
 
     story.append(Paragraph(f"Website Audit: {summary.get('url', 'Unknown URL')}", styles["Title"]))
     story.append(Spacer(1, 12))
+    story.append(Paragraph("Website Scorecard", styles["Heading2"]))
+    story.append(Paragraph(
+        f"<b>Total Score:</b> {scorecard.get('total_score', 0)} / 100",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"On-Page SEO: {scorecard.get('seo_score', 0)} / 25",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"Local Signals: {scorecard.get('local_score', 0)} / 25",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"Trust Signals: {scorecard.get('trust_score', 0)} / 25",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"Structured Data: {scorecard.get('schema_score', 0)} / 25",
+        styles["BodyText"]
+    ))
+    story.append(Spacer(1, 16))
 
     # Add homepage screenshot if available
     screenshot_path = summary.get("desktop_screenshot")

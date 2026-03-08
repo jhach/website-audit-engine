@@ -2,6 +2,7 @@ import sys
 import json
 from pathlib import Path
 from pdf_report import build_pdf_report
+from scorecard import calculate_score
 
 from crawl import discover_top_pages
 from fetch_page import fetch_page
@@ -75,6 +76,8 @@ def main():
                 "has_breadcrumb": schema_summary["has_breadcrumb"],
                 "has_faq": schema_summary["has_faq"]
             }
+            
+            seo_summary["scorecard"] = calculate_score(seo_summary)
 
             raw_schema_path = raw_schema_dir / f"{slug}_schema_blocks.json"
             raw_schema_path.write_text(
@@ -102,12 +105,19 @@ def main():
 
     homepage_summary = next((p for p in all_page_summaries if p["slug"] == "home"), None)
     if homepage_summary:
+        homepage_summary_path = processed_dir / "homepage_summary.json"
+        homepage_summary_path.write_text(
+            json.dumps(homepage_summary, indent=2),
+            encoding="utf-8"
+        )
+
         report_path = report_dir / "audit_report.md"
         pdf_path = report_dir / "audit_report.pdf"
 
         build_markdown_report(homepage_summary, report_path)
         build_pdf_report(homepage_summary, pdf_path)
 
+        print(f"Saved homepage summary JSON to {homepage_summary_path}")
         print(f"Saved markdown report to {report_path}")
         print(f"Saved PDF report to {pdf_path}")
 
