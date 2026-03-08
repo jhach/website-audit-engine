@@ -4,6 +4,7 @@ from pathlib import Path
 def build_markdown_report(summary: dict, output_path: Path) -> None:
     schema = summary.get("schema", {})
     location_signals = summary.get("location_signals", {})
+    scorecard = summary.get("scorecard", {})
 
     broad_mentions = location_signals.get("broad_mentions", {})
     priority_suburb_mentions = location_signals.get("priority_suburb_mentions", {})
@@ -19,6 +20,16 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
         "",
         f"- **Title:** {summary.get('title') or 'Missing'}",
         f"- **Title length:** {summary.get('title_length', 0)}",
+        "## Website Scorecard",
+        "",
+        f"- **Total Score:** {scorecard.get('total_score', 0)} / 100",
+        f"- **Grade:** {scorecard.get('grade_band', 'N/A')}",
+        f"- **On-Page SEO:** {scorecard.get('seo_score', 0)} / 25",
+        f"- **Local Signals:** {scorecard.get('local_score', 0)} / 20",
+        f"- **Trust & Conversion:** {scorecard.get('trust_score', 0)} / 25",
+        f"- **Structured Data:** {scorecard.get('schema_score', 0)} / 15",
+        f"- **UX Baseline:** {scorecard.get('ux_score', 0)} / 15",
+        "",
         f"- **Meta description:** {summary.get('meta_description') or 'Missing'}",
         f"- **Meta description length:** {summary.get('meta_description_length', 0)}",
         f"- **Canonical:** {summary.get('canonical') or 'Missing'}",

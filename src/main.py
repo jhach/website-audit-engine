@@ -57,7 +57,12 @@ def main():
             capture_screenshots(page_url, desktop_path, mobile_path)
 
             seo_summary = extract_basic_seo(html_path, page_url)
-            location_summary = detect_location_mentions(html_path, location_config)
+            location_summary = detect_location_mentions(
+                html_path,
+                location_config,
+                title=seo_summary.get("title", ""),
+                h1=seo_summary.get("h1", "")
+            )
             schema_summary = extract_schema_types(html_path)
             trust_summary = detect_trust_signals(html_path)
 
@@ -66,6 +71,8 @@ def main():
             seo_summary["mobile_screenshot"] = str(mobile_path)
             seo_summary["location_signals"] = location_summary
             seo_summary["trust_signals"] = trust_summary
+            seo_summary["title_has_local_term"] = location_summary.get("title_has_local_term", False)
+            seo_summary["h1_has_local_term"] = location_summary.get("h1_has_local_term", False)
             seo_summary["schema"] = {
                 "schema_found": schema_summary["schema_found"],
                 "schema_block_count": schema_summary["schema_block_count"],

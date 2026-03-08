@@ -56,7 +56,7 @@ def extract_basic_seo(html_path: Path, url: str) -> dict:
     }
 
 
-def detect_location_mentions(html_path: Path, location_config: dict) -> dict:
+def detect_location_mentions(html_path: Path, location_config: dict, title: str = "", h1: str = "") -> dict:
     html = html_path.read_text(encoding="utf-8", errors="ignore").lower()
 
     broad_terms = location_config.get("broad_terms", [])
@@ -74,6 +74,12 @@ def detect_location_mentions(html_path: Path, location_config: dict) -> dict:
     missing_broad_terms = [term for term, count in broad_mentions.items() if count == 0]
     missing_priority_suburbs = [term for term, count in priority_suburb_mentions.items() if count == 0]
 
+    title_lower = (title or "").lower()
+    h1_lower = (h1 or "").lower()
+
+    title_has_local_term = any(term.lower() in title_lower for term in broad_terms + priority_suburbs + all_suburbs)
+    h1_has_local_term = any(term.lower() in h1_lower for term in broad_terms + priority_suburbs + all_suburbs)
+
     return {
         "broad_mentions": broad_mentions,
         "priority_suburb_mentions": priority_suburb_mentions,
@@ -85,7 +91,9 @@ def detect_location_mentions(html_path: Path, location_config: dict) -> dict:
         "missing_priority_suburbs": missing_priority_suburbs,
         "has_any_broad_term": len(found_broad_terms) > 0,
         "has_any_priority_suburb": len(found_priority_suburbs) > 0,
-        "has_any_suburb": len(found_all_suburbs) > 0
+        "has_any_suburb": len(found_all_suburbs) > 0,
+        "title_has_local_term": title_has_local_term,
+        "h1_has_local_term": h1_has_local_term
     }
 
 
