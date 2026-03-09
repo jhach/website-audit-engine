@@ -14,6 +14,7 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     location_signals = summary.get("location_signals", {})
     trust_signals = summary.get("trust_signals", {})
     scorecard = summary.get("scorecard", {})
+    lighthouse = summary.get("lighthouse", {})
 
     story.append(Paragraph(f"Website Audit: {summary.get('url', 'Unknown URL')}", styles["Title"]))
     story.append(Spacer(1, 12))
@@ -86,6 +87,41 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Paragraph(f"<b>Testimonials found:</b> {'Yes' if trust_signals.get('testimonials_found') else 'No'}", styles["BodyText"]))
     story.append(Paragraph(f"<b>Privacy policy found:</b> {'Yes' if trust_signals.get('privacy_policy_found') else 'No'}", styles["BodyText"]))
     story.append(Paragraph(f"<b>Booking system detected:</b> {'Yes' if trust_signals.get('booking_system_detected') else 'No'}", styles["BodyText"]))
+    story.append(Spacer(1, 12))
+
+    story.append(Paragraph("Lighthouse Summary", styles["Heading2"]))
+    story.append(Paragraph(
+        f"<b>Performance:</b> {lighthouse.get('performance', 'N/A')}",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"<b>Accessibility:</b> {lighthouse.get('accessibility', 'N/A')}",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"<b>Best Practices:</b> {lighthouse.get('best_practices', 'N/A')}",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"<b>SEO:</b> {lighthouse.get('seo', 'N/A')}",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"<b>LCP:</b> {lighthouse.get('largest_contentful_paint', 'N/A')}",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"<b>CLS:</b> {lighthouse.get('cumulative_layout_shift', 'N/A')}",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"<b>Speed Index:</b> {lighthouse.get('speed_index', 'N/A')}",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"<b>Total Blocking Time:</b> {lighthouse.get('total_blocking_time', 'N/A')}",
+        styles["BodyText"]
+    ))
     story.append(Spacer(1, 12))
 
     story.append(Paragraph("Initial Notes", styles["Heading2"]))

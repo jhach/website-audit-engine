@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from pdf_report import build_pdf_report
 from scorecard import calculate_score
+from lighthouse_audit import run_lighthouse
 
 from crawl import discover_top_pages
 from fetch_page import fetch_page
@@ -34,11 +35,13 @@ def main():
     report_dir = base_dir / "report"
     raw_schema_dir = base_dir / "raw" / "schema"
     raw_screenshot_dir = base_dir / "raw" / "screenshots"
+    raw_lighthouse_dir = base_dir / "raw" / "lighthouse"
 
     raw_html_dir.mkdir(parents=True, exist_ok=True)
     processed_dir.mkdir(parents=True, exist_ok=True)
     report_dir.mkdir(parents=True, exist_ok=True)
     raw_schema_dir.mkdir(parents=True, exist_ok=True)
+    raw_lighthouse_dir.mkdir(parents=True, exist_ok=True)
     raw_screenshot_dir.mkdir(parents=True, exist_ok=True)
 
     pages = discover_top_pages(url, max_pages=5)
@@ -83,6 +86,10 @@ def main():
                 "has_breadcrumb": schema_summary["has_breadcrumb"],
                 "has_faq": schema_summary["has_faq"]
             }
+
+            if slug == "home":
+                lighthouse_summary = run_lighthouse(page_url, raw_lighthouse_dir, slug)
+                seo_summary["lighthouse"] = lighthouse_summary
             
             seo_summary["scorecard"] = calculate_score(seo_summary)
 
