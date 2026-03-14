@@ -17,6 +17,15 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     lighthouse = summary.get("lighthouse", {})
     opportunity_summary = summary.get("opportunity_summary", {})
 
+    grade = scorecard.get("grade_band", "N/A")
+    grade_message = {
+        "A": "Strong foundation with a few refinement opportunities.",
+        "B": "Good base with some worthwhile improvement areas.",
+        "C": "Underperforming in several areas that could be improved.",
+        "D": "Weak foundations are likely holding the site back.",
+        "F": "Significant issues are likely affecting visibility and conversions."
+    }.get(grade, "No grade interpretation available.")
+
     # Title
     story.append(Paragraph(f"Website Audit: {summary.get('url', 'Unknown URL')}", styles["Title"]))
     story.append(Spacer(1, 12))
@@ -28,7 +37,11 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
         styles["BodyText"]
     ))
     story.append(Paragraph(
-        f"<b>Grade:</b> {scorecard.get('grade_band', 'N/A')}",
+        f"<b>Grade:</b> {grade}",
+        styles["BodyText"]
+    ))
+    story.append(Paragraph(
+        f"<b>What this means:</b> {grade_message}",
         styles["BodyText"]
     ))
     story.append(Paragraph(
@@ -180,41 +193,41 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     notes = []
 
     if not summary.get("title"):
-        notes.append("Missing page title.")
+        notes.append("Title tag is missing.")
     if summary.get("title_length", 0) > 60:
-        notes.append("Title may be too long for search results.")
+        notes.append("Title length could be improved for search results.")
     if not summary.get("meta_description"):
-        notes.append("Missing meta description.")
+        notes.append("Meta description is missing.")
     if summary.get("meta_description_length", 0) > 155:
-        notes.append("Meta description may be too long for search snippets.")
+        notes.append("Meta description is longer than ideal and may truncate in search.")
     if not summary.get("h1"):
-        notes.append("Missing H1 heading.")
+        notes.append("Main page heading (H1) is missing.")
     if summary.get("h1_count", 0) > 1:
-        notes.append("Multiple H1 tags detected.")
+        notes.append("Heading structure could be cleaned up.")
     if not summary.get("canonical"):
-        notes.append("Missing canonical tag.")
+        notes.append("Canonical tag is missing.")
     if not location_signals.get("found_broad_terms"):
-        notes.append("No broad local area terms were detected on this page.")
+        notes.append("Broad local area terms were not detected on this page.")
     if not location_signals.get("found_priority_suburbs"):
-        notes.append("No priority suburb terms were detected on this page.")
+        notes.append("Priority suburb terms were not detected on this page.")
     if not schema.get("schema_found"):
-        notes.append("No JSON-LD schema found on the page.")
+        notes.append("Structured data was not detected.")
     if schema.get("schema_found") and not schema.get("has_local_business"):
-        notes.append("Schema is present, but LocalBusiness schema is missing.")
+        notes.append("LocalBusiness schema was not detected.")
     if schema.get("schema_found") and not schema.get("has_breadcrumb"):
-        notes.append("Breadcrumb schema is missing.")
+        notes.append("Breadcrumb schema was not detected.")
 
     if not notes:
-        notes.append("Core homepage SEO and structured data signals look solid.")
+        notes.append("The page has a solid technical base with only minor refinement opportunities.")
 
     for note in notes:
         story.append(Paragraph(f"• {note}", styles["BodyText"]))
 
     story.append(Spacer(1, 12))
-    story.append(Paragraph("Hatch Studio Opportunity", styles["Heading2"]))
+    story.append(Paragraph("Summary", styles["Heading2"]))
     story.append(
         Paragraph(
-            "This site can likely improve search visibility, local relevance, and AI-readability by tightening on-page SEO, suburb targeting, trust signals, and structured data.",
+            "Overall, the site has a solid base, but there are a few practical improvements that could strengthen local visibility, improve performance, and make it easier for visitors to turn into enquiries.",
             styles["BodyText"]
         )
     )
