@@ -1,7 +1,7 @@
 from pathlib import Path
 from reportlab.lib.pagesizes import LETTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.utils import ImageReader
 
 
@@ -26,11 +26,43 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
         "F": "Significant issues are likely affecting visibility and conversions."
     }.get(grade, "No grade interpretation available.")
 
-    # Title
+    # -----------------------------
+    # Hatch Studio branding/header
+    # -----------------------------
+    brand_style = ParagraphStyle(
+        "BrandStyle",
+        parent=styles["BodyText"],
+        leading=14,
+        spaceAfter=4
+    )
+
+    logo_path = Path("assets/hatchstudio-logo.png")
+    if logo_path.exists():
+        img_width, img_height = ImageReader(str(logo_path)).getSize()
+        max_width = 160
+        max_height = 60
+        scale = min(max_width / img_width, max_height / img_height)
+        scaled_width = img_width * scale
+        scaled_height = img_height * scale
+        story.append(Image(str(logo_path), width=scaled_width, height=scaled_height))
+        story.append(Spacer(1, 8))
+
+    story.append(Paragraph("<b>Hatch Studio</b>", styles["Heading2"]))
+    story.append(Paragraph("Inner West Web Design & SEO", brand_style))
+    story.append(Paragraph("Website: hatchstudio.com.au", brand_style))
+    story.append(Paragraph("Email: james@hatchstudio.com.au", brand_style))
+    story.append(Paragraph("Phone: 0408 076 901", brand_style))
+    story.append(Spacer(1, 16))
+
+    # -----------------------------
+    # Audit title
+    # -----------------------------
     story.append(Paragraph(f"Website Audit: {summary.get('url', 'Unknown URL')}", styles["Title"]))
     story.append(Spacer(1, 12))
 
+    # -----------------------------
     # Scorecard
+    # -----------------------------
     story.append(Paragraph("Website Scorecard", styles["Heading2"]))
     story.append(Paragraph(
         f"<b>Total Score:</b> {scorecard.get('total_score', 0)} / 100",
@@ -66,7 +98,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     ))
     story.append(Spacer(1, 16))
 
+    # -----------------------------
     # Homepage screenshot
+    # -----------------------------
     screenshot_path = summary.get("desktop_screenshot")
     if screenshot_path:
         screenshot_file = Path(screenshot_path)
@@ -86,7 +120,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
             story.append(Image(str(screenshot_file), width=scaled_width, height=scaled_height))
             story.append(Spacer(1, 16))
 
+    # -----------------------------
     # Homepage summary
+    # -----------------------------
     story.append(Paragraph("Homepage Summary", styles["Heading2"]))
     story.append(Paragraph(f"<b>Title:</b> {summary.get('title') or 'Missing'}", styles["BodyText"]))
     story.append(Paragraph(f"<b>Title length:</b> {summary.get('title_length', 0)}", styles["BodyText"]))
@@ -100,7 +136,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Paragraph(f"<b>Estimated word count:</b> {summary.get('word_count', 0)}", styles["BodyText"]))
     story.append(Spacer(1, 12))
 
+    # -----------------------------
     # Local signals
+    # -----------------------------
     story.append(Paragraph("Local Signals", styles["Heading2"]))
     found_broad_terms = ", ".join(location_signals.get("found_broad_terms", [])) or "None"
     found_priority_suburbs = ", ".join(location_signals.get("found_priority_suburbs", [])) or "None"
@@ -108,7 +146,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Paragraph(f"<b>Found priority suburbs:</b> {found_priority_suburbs}", styles["BodyText"]))
     story.append(Spacer(1, 12))
 
+    # -----------------------------
     # Schema summary
+    # -----------------------------
     story.append(Paragraph("Schema Summary", styles["Heading2"]))
     story.append(Paragraph(f"<b>Schema found:</b> {'Yes' if schema.get('schema_found') else 'No'}", styles["BodyText"]))
     story.append(Paragraph(f"<b>Schema types:</b> {', '.join(schema.get('schema_types', [])) if schema.get('schema_types') else 'None found'}", styles["BodyText"]))
@@ -118,7 +158,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Paragraph(f"<b>Has FAQ schema:</b> {'Yes' if schema.get('has_faq') else 'No'}", styles["BodyText"]))
     story.append(Spacer(1, 12))
 
+    # -----------------------------
     # Trust signals
+    # -----------------------------
     story.append(Paragraph("Trust Signals", styles["Heading2"]))
     story.append(Paragraph(f"<b>Phone found:</b> {'Yes' if trust_signals.get('phone_found') else 'No'}", styles["BodyText"]))
     story.append(Paragraph(f"<b>Email found:</b> {'Yes' if trust_signals.get('email_found') else 'No'}", styles["BodyText"]))
@@ -129,7 +171,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Paragraph(f"<b>Booking system detected:</b> {'Yes' if trust_signals.get('booking_system_detected') else 'No'}", styles["BodyText"]))
     story.append(Spacer(1, 12))
 
+    # -----------------------------
     # Lighthouse summary
+    # -----------------------------
     story.append(Paragraph("Lighthouse Summary", styles["Heading2"]))
     story.append(Paragraph(
         f"<b>Performance:</b> {lighthouse.get('performance', 'N/A')}",
@@ -165,7 +209,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     ))
     story.append(Spacer(1, 12))
 
+    # -----------------------------
     # Opportunity summary
+    # -----------------------------
     story.append(Paragraph("Opportunity Summary", styles["Heading2"]))
 
     top_opportunities = opportunity_summary.get("top_opportunities", [])
@@ -188,7 +234,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
 
     story.append(Spacer(1, 12))
 
+    # -----------------------------
     # Initial notes
+    # -----------------------------
     story.append(Paragraph("Initial Notes", styles["Heading2"]))
     notes = []
 
