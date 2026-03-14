@@ -194,7 +194,7 @@ def calculate_score(summary: dict) -> dict:
     lh_values = [v for v in [perf, access, best, seo_lh] if isinstance(v, int)]
     if lh_values:
         lh_average = sum(lh_values) / len(lh_values)
-        ux_score = round((lh_average / 100) * 25)
+        ux_score = min(25, round((lh_average / 100) * 25))
     else:
         ux_score = 0
         ux_notes.append("No Lighthouse data detected.")
