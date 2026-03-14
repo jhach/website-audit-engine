@@ -3,33 +3,28 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.utils import ImageReader
-
 from reportlab.pdfgen import canvas
+
 
 def add_footer(canvas, doc):
     canvas.saveState()
-
     footer_text = "Hatch Studio | hatchstudio.com.au"
     page_number = f"Page {doc.page}"
-
     canvas.setFont("Helvetica", 9)
-
-    # left footer
     canvas.drawString(40, 20, footer_text)
-
-    # right footer
     canvas.drawRightString(570, 20, page_number)
-
     canvas.restoreState()
+
+
 def _performance_message(score):
     if score is None:
         return "Performance data was not available."
     if score >= 90:
         return "The site is performing strongly and loading at a healthy speed."
     if score >= 70:
-        return "The site is reasonably healthy, but there is room to improve speed and responsiveness."
+        return "The site is in decent shape, but there is still room to improve speed and responsiveness."
     if score >= 50:
-        return "The site is loading slower than recommended, especially for mobile visitors."
+        return "The site is loading slower than recommended, especially on mobile."
     return "The site is performing poorly and may be losing visitors before the page fully loads."
 
 
@@ -39,8 +34,8 @@ def _accessibility_message(score):
     if score >= 90:
         return "Accessibility is in a strong place overall."
     if score >= 75:
-        return "Accessibility is decent, with some areas that could be improved."
-    return "Accessibility needs attention to make the site easier to use for all visitors."
+        return "Accessibility is decent, with a few areas that could be improved."
+    return "Accessibility needs attention to make the site easier to use for more visitors."
 
 
 def _best_practices_message(score):
@@ -49,8 +44,8 @@ def _best_practices_message(score):
     if score >= 90:
         return "The site follows technical best practices well overall."
     if score >= 75:
-        return "The site is in decent shape technically, but there are a few improvements worth making."
-    return "There are technical issues that should be cleaned up to strengthen the site."
+        return "The site is in decent shape technically, with a few worthwhile improvements available."
+    return "There are technical issues worth cleaning up to strengthen the site."
 
 
 def _seo_message(score):
@@ -59,8 +54,8 @@ def _seo_message(score):
     if score >= 90:
         return "The site has a solid technical SEO base."
     if score >= 75:
-        return "The technical SEO base is decent, with some worthwhile improvements available."
-    return "Technical SEO needs work to improve how clearly the site is understood by search engines."
+        return "The technical SEO base is decent, with a few worthwhile improvements available."
+    return "Technical SEO needs work to make the site easier for search engines to understand."
 
 
 def _lcp_message(lcp_value):
@@ -75,7 +70,17 @@ def _lcp_message(lcp_value):
         return "The main content is a little slower than ideal."
     if seconds <= 6:
         return "The main content is loading slower than recommended and may affect user experience."
-    return "The main content is taking too long to appear, which can hurt both engagement and conversions."    
+    return "The main content is taking too long to appear, which can hurt both engagement and conversions."
+
+
+def _search_indexing_message(robots_value):
+    if not robots_value:
+        return "No robots meta tag was detected."
+    robots_lower = robots_value.lower()
+    if "noindex" in robots_lower:
+        return "Search engines may be blocked from indexing this page."
+    return "Search engines appear to be allowed to index this page."
+
 
 def build_pdf_report(summary: dict, output_path: Path) -> None:
     doc = SimpleDocTemplate(str(output_path), pagesize=LETTER)
@@ -93,14 +98,20 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     grade_message = {
         "A": "Strong foundation with a few refinement opportunities.",
         "B": "Good base with some worthwhile improvement areas.",
-        "C": "Underperforming in several areas that could be improved.",
-        "D": "Weak foundations are likely holding the site back.",
-        "F": "Significant issues are likely affecting visibility and conversions."
+        "C": "There are a few clear gaps that could be holding the site back.",
+        "D": "The site has some weaker foundations that are likely limiting visibility and conversions.",
+        "F": "There are significant issues that are likely affecting performance, visibility, and trust."
     }.get(grade, "No grade interpretation available.")
 
-    # -----------------------------
-    # Hatch Studio branding/header
-    # -----------------------------
+    performance = lighthouse.get("performance")
+    accessibility = lighthouse.get("accessibility")
+    best_practices = lighthouse.get("best_practices")
+    seo_lh = lighthouse.get("seo")
+    lcp = lighthouse.get("largest_contentful_paint", "N/A")
+
+    robots_value = summary.get("robots")
+    search_indexing = _search_indexing_message(robots_value)
+
     brand_style = ParagraphStyle(
         "BrandStyle",
         parent=styles["BodyText"],
@@ -121,20 +132,14 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
 
     story.append(Paragraph("<b>Hatch Studio</b>", styles["Heading2"]))
     story.append(Paragraph("Inner West Web Design & SEO", brand_style))
-    story.append(Paragraph("hatchstudio.com.au", brand_style))
-    story.append(Paragraph("james@hatchstudio.com.au", brand_style))
-    story.append(Paragraph("0408 076 901", brand_style))
+    story.append(Paragraph("Website: hatchstudio.com.au", brand_style))
+    story.append(Paragraph("Email: hello@hatchstudio.com.au", brand_style))
+    story.append(Paragraph("Phone: 0400 123 456", brand_style))
     story.append(Spacer(1, 16))
 
-    # -----------------------------
-    # Audit title
-    # -----------------------------
     story.append(Paragraph(f"Website Audit: {summary.get('url', 'Unknown URL')}", styles["Title"]))
     story.append(Spacer(1, 12))
 
-    # -----------------------------
-    # Scorecard
-    # -----------------------------
     story.append(Paragraph("Website Scorecard", styles["Heading2"]))
     story.append(Paragraph(
         f"Total Score: {scorecard.get('total_score', 0)} / 100",
@@ -170,9 +175,6 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     ))
     story.append(Spacer(1, 16))
 
-    # -----------------------------
-    # Homepage screenshot
-    # -----------------------------
     screenshot_path = summary.get("desktop_screenshot")
     if screenshot_path:
         screenshot_file = Path(screenshot_path)
@@ -192,70 +194,48 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
             story.append(Image(str(screenshot_file), width=scaled_width, height=scaled_height))
             story.append(Spacer(1, 16))
 
-    # -----------------------------
-    # Homepage summary
-    # -----------------------------
     story.append(Paragraph("Homepage Summary", styles["Heading2"]))
-    story.append(Paragraph(f"<b>Title:</b> {summary.get('title') or 'Missing'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Title length:</b> {summary.get('title_length', 0)}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Meta description:</b> {summary.get('meta_description') or 'Missing'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Meta description length:</b> {summary.get('meta_description_length', 0)}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Canonical:</b> {summary.get('canonical') or 'Missing'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Robots meta:</b> {summary.get('robots') or 'Missing'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>H1:</b> {summary.get('h1') or 'Missing'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>H1 count:</b> {summary.get('h1_count', 0)}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>H2 count:</b> {summary.get('h2_count', 0)}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Estimated word count:</b> {summary.get('word_count', 0)}", styles["BodyText"]))
+    story.append(Paragraph(f"Title: {summary.get('title') or 'Missing'}", styles["BodyText"]))
+    story.append(Paragraph(f"Title length: {summary.get('title_length', 0)}", styles["BodyText"]))
+    story.append(Paragraph(f"Meta description: {summary.get('meta_description') or 'Missing'}", styles["BodyText"]))
+    story.append(Paragraph(f"Meta description length: {summary.get('meta_description_length', 0)}", styles["BodyText"]))
+    story.append(Paragraph(f"Canonical: {summary.get('canonical') or 'Missing'}", styles["BodyText"]))
+    story.append(Paragraph(f"Search indexing: {search_indexing}", styles["BodyText"]))
+    story.append(Paragraph(f"H1: {summary.get('h1') or 'Missing'}", styles["BodyText"]))
+    story.append(Paragraph(f"H1 count: {summary.get('h1_count', 0)}", styles["BodyText"]))
+    story.append(Paragraph(f"H2 count: {summary.get('h2_count', 0)}", styles["BodyText"]))
+    story.append(Paragraph(f"Estimated word count: {summary.get('word_count', 0)}", styles["BodyText"]))
     story.append(Spacer(1, 12))
 
-    # -----------------------------
-    # Local signals
-    # -----------------------------
     story.append(Paragraph("Local Signals", styles["Heading2"]))
     found_broad_terms = ", ".join(location_signals.get("found_broad_terms", [])) or "None"
     found_priority_suburbs = ", ".join(location_signals.get("found_priority_suburbs", [])) or "None"
-    story.append(Paragraph(f"<b>Found broad terms:</b> {found_broad_terms}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Found priority suburbs:</b> {found_priority_suburbs}", styles["BodyText"]))
+    story.append(Paragraph(f"Found broad terms: {found_broad_terms}", styles["BodyText"]))
+    story.append(Paragraph(f"Found priority suburbs: {found_priority_suburbs}", styles["BodyText"]))
     story.append(Spacer(1, 12))
 
-    # -----------------------------
-    # Schema summary
-    # -----------------------------
     story.append(Paragraph("Schema Summary", styles["Heading2"]))
-    story.append(Paragraph(f"<b>Schema found:</b> {'Yes' if schema.get('schema_found') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Schema types:</b> {', '.join(schema.get('schema_types', [])) if schema.get('schema_types') else 'None found'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Has Organization schema:</b> {'Yes' if schema.get('has_organization') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Has LocalBusiness schema:</b> {'Yes' if schema.get('has_local_business') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Has Breadcrumb schema:</b> {'Yes' if schema.get('has_breadcrumb') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Has FAQ schema:</b> {'Yes' if schema.get('has_faq') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Schema found: {'Yes' if schema.get('schema_found') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Schema types: {', '.join(schema.get('schema_types', [])) if schema.get('schema_types') else 'None found'}", styles["BodyText"]))
+    story.append(Paragraph(f"Has Organization schema: {'Yes' if schema.get('has_organization') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Has LocalBusiness schema: {'Yes' if schema.get('has_local_business') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Has Breadcrumb schema: {'Yes' if schema.get('has_breadcrumb') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Has FAQ schema: {'Yes' if schema.get('has_faq') else 'No'}", styles["BodyText"]))
     story.append(Spacer(1, 12))
 
-    # -----------------------------
-    # Trust signals
-    # -----------------------------
     story.append(Paragraph("Trust Signals", styles["Heading2"]))
-    story.append(Paragraph(f"<b>Phone found:</b> {'Yes' if trust_signals.get('phone_found') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Email found:</b> {'Yes' if trust_signals.get('email_found') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Address found:</b> {'Yes' if trust_signals.get('address_found') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Contact form found:</b> {'Yes' if trust_signals.get('contact_form_found') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Testimonials found:</b> {'Yes' if trust_signals.get('testimonials_found') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Privacy policy found:</b> {'Yes' if trust_signals.get('privacy_policy_found') else 'No'}", styles["BodyText"]))
-    story.append(Paragraph(f"<b>Booking system detected:</b> {'Yes' if trust_signals.get('booking_system_detected') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Phone found: {'Yes' if trust_signals.get('phone_found') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Email found: {'Yes' if trust_signals.get('email_found') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Address found: {'Yes' if trust_signals.get('address_found') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Contact form found: {'Yes' if trust_signals.get('contact_form_found') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Testimonials found: {'Yes' if trust_signals.get('testimonials_found') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Privacy policy found: {'Yes' if trust_signals.get('privacy_policy_found') else 'No'}", styles["BodyText"]))
+    story.append(Paragraph(f"Booking system detected: {'Yes' if trust_signals.get('booking_system_detected') else 'No'}", styles["BodyText"]))
     story.append(Spacer(1, 12))
 
-    # -----------------------------
-    # Performance snapshot
-    # -----------------------------
     story.append(Paragraph("Performance Snapshot", styles["Heading2"]))
-
-    performance = lighthouse.get("performance")
-    accessibility = lighthouse.get("accessibility")
-    best_practices = lighthouse.get("best_practices")
-    seo_lh = lighthouse.get("seo")
-    lcp = lighthouse.get("largest_contentful_paint", "N/A")
-
     story.append(Paragraph(
-        f"<b>Performance:</b> {performance if performance is not None else 'N/A'} / 100",
+        f"Performance: {performance if performance is not None else 'N/A'} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
@@ -265,7 +245,7 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Spacer(1, 6))
 
     story.append(Paragraph(
-        f"<b>Accessibility:</b> {accessibility if accessibility is not None else 'N/A'} / 100",
+        f"Accessibility: {accessibility if accessibility is not None else 'N/A'} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
@@ -275,7 +255,7 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Spacer(1, 6))
 
     story.append(Paragraph(
-        f"<b>Best Practices:</b> {best_practices if best_practices is not None else 'N/A'} / 100",
+        f"Best Practices: {best_practices if best_practices is not None else 'N/A'} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
@@ -285,7 +265,7 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Spacer(1, 6))
 
     story.append(Paragraph(
-        f"<b>Technical SEO:</b> {seo_lh if seo_lh is not None else 'N/A'} / 100",
+        f"Technical SEO: {seo_lh if seo_lh is not None else 'N/A'} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
@@ -295,7 +275,7 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Spacer(1, 6))
 
     story.append(Paragraph(
-        f"<b>Main content load time:</b> {lcp}",
+        f"Main content load time: {lcp}",
         styles["BodyText"]
     ))
     story.append(Paragraph(
@@ -304,15 +284,12 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     ))
     story.append(Spacer(1, 12))
 
-    # -----------------------------
-    # Opportunity summary
-    # -----------------------------
     story.append(Paragraph("Opportunity Summary", styles["Heading2"]))
 
     top_opportunities = opportunity_summary.get("top_opportunities", [])
     potential_impact = opportunity_summary.get("potential_impact", [])
 
-    story.append(Paragraph("<b>Top Opportunities</b>", styles["BodyText"]))
+    story.append(Paragraph("Top Opportunities", styles["BodyText"]))
     if top_opportunities:
         for item in top_opportunities:
             story.append(Paragraph(f"• {item}", styles["BodyText"]))
@@ -320,7 +297,7 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
         story.append(Paragraph("• No major opportunities identified.", styles["BodyText"]))
 
     story.append(Spacer(1, 8))
-    story.append(Paragraph("<b>Potential Impact</b>", styles["BodyText"]))
+    story.append(Paragraph("Potential Impact", styles["BodyText"]))
     if potential_impact:
         for item in potential_impact:
             story.append(Paragraph(f"• {item}", styles["BodyText"]))
@@ -329,10 +306,7 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
 
     story.append(Spacer(1, 12))
 
-    # -----------------------------
-    # Initial notes
-    # -----------------------------
-    story.append(Paragraph("Initial Notes", styles["Heading2"]))
+    story.append(Paragraph("Technical Observations", styles["Heading2"]))
     notes = []
 
     if not summary.get("title"):
@@ -367,16 +341,16 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
         story.append(Paragraph(f"• {note}", styles["BodyText"]))
 
     story.append(Spacer(1, 12))
-    story.append(Paragraph("Summary", styles["Heading2"]))
+    story.append(Paragraph("Hatch Studio Notes", styles["Heading2"]))
     story.append(
         Paragraph(
-            "Overall, the site has a solid base, but there are a few practical improvements that could strengthen local visibility, improve performance, and make it easier for visitors to turn into enquiries.",
+            "From a quick audit, the site has a solid base but there are a few areas that could be tightened to improve search visibility, loading performance, and how clearly the business is understood by Google. Most of these are practical fixes rather than major rebuilds.",
             styles["BodyText"]
         )
     )
 
     doc.build(
-    story,
-    onFirstPage=add_footer,
-    onLaterPages=add_footer
-)
+        story,
+        onFirstPage=add_footer,
+        onLaterPages=add_footer
+    )

@@ -7,9 +7,9 @@ def _performance_message(score):
     if score >= 90:
         return "The site is performing strongly and loading at a healthy speed."
     if score >= 70:
-        return "The site is reasonably healthy, but there is room to improve speed and responsiveness."
+        return "The site is in decent shape, but there is still room to improve speed and responsiveness."
     if score >= 50:
-        return "The site is loading slower than recommended, especially for mobile visitors."
+        return "The site is loading slower than recommended, especially on mobile."
     return "The site is performing poorly and may be losing visitors before the page fully loads."
 
 
@@ -19,8 +19,8 @@ def _accessibility_message(score):
     if score >= 90:
         return "Accessibility is in a strong place overall."
     if score >= 75:
-        return "Accessibility is decent, with some areas that could be improved."
-    return "Accessibility needs attention to make the site easier to use for all visitors."
+        return "Accessibility is decent, with a few areas that could be improved."
+    return "Accessibility needs attention to make the site easier to use for more visitors."
 
 
 def _best_practices_message(score):
@@ -29,8 +29,8 @@ def _best_practices_message(score):
     if score >= 90:
         return "The site follows technical best practices well overall."
     if score >= 75:
-        return "The site is in decent shape technically, but there are a few improvements worth making."
-    return "There are technical issues that should be cleaned up to strengthen the site."
+        return "The site is in decent shape technically, with a few worthwhile improvements available."
+    return "There are technical issues worth cleaning up to strengthen the site."
 
 
 def _seo_message(score):
@@ -39,8 +39,8 @@ def _seo_message(score):
     if score >= 90:
         return "The site has a solid technical SEO base."
     if score >= 75:
-        return "The technical SEO base is decent, with some worthwhile improvements available."
-    return "Technical SEO needs work to improve how clearly the site is understood by search engines."
+        return "The technical SEO base is decent, with a few worthwhile improvements available."
+    return "Technical SEO needs work to make the site easier for search engines to understand."
 
 
 def _lcp_message(lcp_value):
@@ -56,6 +56,15 @@ def _lcp_message(lcp_value):
     if seconds <= 6:
         return "The main content is loading slower than recommended and may affect user experience."
     return "The main content is taking too long to appear, which can hurt both engagement and conversions."
+
+
+def _search_indexing_message(robots_value):
+    if not robots_value:
+        return "No robots meta tag was detected."
+    robots_lower = robots_value.lower()
+    if "noindex" in robots_lower:
+        return "Search engines may be blocked from indexing this page."
+    return "Search engines appear to be allowed to index this page."
 
 
 def build_markdown_report(summary: dict, output_path: Path) -> None:
@@ -77,9 +86,9 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
     grade_message = {
         "A": "Strong foundation with a few refinement opportunities.",
         "B": "Good base with some worthwhile improvement areas.",
-        "C": "Underperforming in several areas that could be improved.",
-        "D": "Weak foundations are likely holding the site back.",
-        "F": "Significant issues are likely affecting visibility and conversions."
+        "C": "There are a few clear gaps that could be holding the site back.",
+        "D": "The site has some weaker foundations that are likely limiting visibility and conversions.",
+        "F": "There are significant issues that are likely affecting performance, visibility, and trust."
     }.get(grade, "No grade interpretation available.")
 
     performance = lighthouse.get("performance")
@@ -87,6 +96,9 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
     best_practices = lighthouse.get("best_practices")
     seo_lh = lighthouse.get("seo")
     lcp = lighthouse.get("largest_contentful_paint", "N/A")
+
+    robots_value = summary.get("robots")
+    search_indexing = _search_indexing_message(robots_value)
 
     top_opportunities = opportunity_summary.get("top_opportunities", [])
     potential_impact = opportunity_summary.get("potential_impact", [])
@@ -112,7 +124,7 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
         f"- **Meta description:** {summary.get('meta_description') or 'Missing'}",
         f"- **Meta description length:** {summary.get('meta_description_length', 0)}",
         f"- **Canonical:** {summary.get('canonical') or 'Missing'}",
-        f"- **Robots meta:** {summary.get('robots') or 'Missing'}",
+        f"- **Search indexing:** {search_indexing}",
         f"- **H1:** {summary.get('h1') or 'Missing'}",
         f"- **H1 count:** {summary.get('h1_count', 0)}",
         f"- **H2 count:** {summary.get('h2_count', 0)}",
@@ -205,56 +217,48 @@ def build_markdown_report(summary: dict, output_path: Path) -> None:
 
     lines.extend([
         "",
-        "## Initial Notes",
+        "## Technical Observations",
         ""
     ])
 
-    if not summary.get("title"):
-        lines.append("- Title tag is missing.")
-    if summary.get("title_length", 0) > 60:
-        lines.append("- Title length could be improved for search results.")
-    if not summary.get("meta_description"):
-        lines.append("- Meta description is missing.")
-    if summary.get("meta_description_length", 0) > 155:
-        lines.append("- Meta description is longer than ideal and may truncate in search.")
-    if not summary.get("h1"):
-        lines.append("- Main page heading (H1) is missing.")
-    if summary.get("h1_count", 0) > 1:
-        lines.append("- Heading structure could be cleaned up.")
-    if not summary.get("canonical"):
-        lines.append("- Canonical tag is missing.")
-    if not found_broad_terms:
-        lines.append("- Broad local area terms were not detected on this page.")
-    if not found_priority_suburbs:
-        lines.append("- Priority suburb terms were not detected on this page.")
-    if not schema.get("schema_found"):
-        lines.append("- Structured data was not detected.")
-    if schema.get("schema_found") and not schema.get("has_local_business"):
-        lines.append("- LocalBusiness schema was not detected.")
-    if schema.get("schema_found") and not schema.get("has_breadcrumb"):
-        lines.append("- Breadcrumb schema was not detected.")
+    notes = []
 
-    if not (
-        not summary.get("title")
-        or summary.get("title_length", 0) > 60
-        or not summary.get("meta_description")
-        or summary.get("meta_description_length", 0) > 155
-        or not summary.get("h1")
-        or summary.get("h1_count", 0) > 1
-        or not summary.get("canonical")
-        or not found_broad_terms
-        or not found_priority_suburbs
-        or not schema.get("schema_found")
-        or (schema.get("schema_found") and not schema.get("has_local_business"))
-        or (schema.get("schema_found") and not schema.get("has_breadcrumb"))
-    ):
+    if not summary.get("title"):
+        notes.append("Title tag is missing.")
+    if summary.get("title_length", 0) > 60:
+        notes.append("Title length could be improved for search results.")
+    if not summary.get("meta_description"):
+        notes.append("Meta description is missing.")
+    if summary.get("meta_description_length", 0) > 155:
+        notes.append("Meta description is longer than ideal and may truncate in search.")
+    if not summary.get("h1"):
+        notes.append("Main page heading (H1) is missing.")
+    if summary.get("h1_count", 0) > 1:
+        notes.append("Heading structure could be cleaned up.")
+    if not summary.get("canonical"):
+        notes.append("Canonical tag is missing.")
+    if not found_broad_terms:
+        notes.append("Broad local area terms were not detected on this page.")
+    if not found_priority_suburbs:
+        notes.append("Priority suburb terms were not detected on this page.")
+    if not schema.get("schema_found"):
+        notes.append("Structured data was not detected.")
+    if schema.get("schema_found") and not schema.get("has_local_business"):
+        notes.append("LocalBusiness schema was not detected.")
+    if schema.get("schema_found") and not schema.get("has_breadcrumb"):
+        notes.append("Breadcrumb schema was not detected.")
+
+    if notes:
+        for note in notes:
+            lines.append(f"- {note}")
+    else:
         lines.append("- The page has a solid technical base with only minor refinement opportunities.")
 
     lines.extend([
         "",
-        "## Summary",
+        "## Hatch Studio Notes",
         "",
-        "Overall, the site has a solid base, but there are a few practical improvements that could strengthen local visibility, improve performance, and make it easier for visitors to turn into enquiries.",
+        "From a quick audit, the site has a solid base but there are a few areas that could be tightened to improve search visibility, loading performance, and how clearly the business is understood by Google. Most of these are practical fixes rather than major rebuilds.",
         ""
     ])
 
