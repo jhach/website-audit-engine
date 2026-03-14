@@ -21,6 +21,61 @@ def add_footer(canvas, doc):
     canvas.drawRightString(570, 20, page_number)
 
     canvas.restoreState()
+def _performance_message(score):
+    if score is None:
+        return "Performance data was not available."
+    if score >= 90:
+        return "The site is performing strongly and loading at a healthy speed."
+    if score >= 70:
+        return "The site is reasonably healthy, but there is room to improve speed and responsiveness."
+    if score >= 50:
+        return "The site is loading slower than recommended, especially for mobile visitors."
+    return "The site is performing poorly and may be losing visitors before the page fully loads."
+
+
+def _accessibility_message(score):
+    if score is None:
+        return "Accessibility data was not available."
+    if score >= 90:
+        return "Accessibility is in a strong place overall."
+    if score >= 75:
+        return "Accessibility is decent, with some areas that could be improved."
+    return "Accessibility needs attention to make the site easier to use for all visitors."
+
+
+def _best_practices_message(score):
+    if score is None:
+        return "Best practices data was not available."
+    if score >= 90:
+        return "The site follows technical best practices well overall."
+    if score >= 75:
+        return "The site is in decent shape technically, but there are a few improvements worth making."
+    return "There are technical issues that should be cleaned up to strengthen the site."
+
+
+def _seo_message(score):
+    if score is None:
+        return "Technical SEO data was not available."
+    if score >= 90:
+        return "The site has a solid technical SEO base."
+    if score >= 75:
+        return "The technical SEO base is decent, with some worthwhile improvements available."
+    return "Technical SEO needs work to improve how clearly the site is understood by search engines."
+
+
+def _lcp_message(lcp_value):
+    try:
+        seconds = float(str(lcp_value).replace("s", "").strip())
+    except Exception:
+        return "This measures how quickly the main visible content appears."
+
+    if seconds <= 2.5:
+        return "The main content is loading within a healthy range."
+    if seconds <= 4:
+        return "The main content is a little slower than ideal."
+    if seconds <= 6:
+        return "The main content is loading slower than recommended and may affect user experience."
+    return "The main content is taking too long to appear, which can hurt both engagement and conversions."    
 
 def build_pdf_report(summary: dict, output_path: Path) -> None:
     doc = SimpleDocTemplate(str(output_path), pagesize=LETTER)
@@ -189,39 +244,62 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     story.append(Spacer(1, 12))
 
     # -----------------------------
-    # Lighthouse summary
+    # Performance snapshot
     # -----------------------------
-    story.append(Paragraph("Lighthouse Summary", styles["Heading2"]))
+    story.append(Paragraph("Performance Snapshot", styles["Heading2"]))
+
+    performance = lighthouse.get("performance")
+    accessibility = lighthouse.get("accessibility")
+    best_practices = lighthouse.get("best_practices")
+    seo_lh = lighthouse.get("seo")
+    lcp = lighthouse.get("largest_contentful_paint", "N/A")
+
     story.append(Paragraph(
-        f"<b>Performance:</b> {lighthouse.get('performance', 'N/A')}",
+        f"<b>Performance:</b> {performance if performance is not None else 'N/A'} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
-        f"<b>Accessibility:</b> {lighthouse.get('accessibility', 'N/A')}",
+        _performance_message(performance),
+        styles["BodyText"]
+    ))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph(
+        f"<b>Accessibility:</b> {accessibility if accessibility is not None else 'N/A'} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
-        f"<b>Best Practices:</b> {lighthouse.get('best_practices', 'N/A')}",
+        _accessibility_message(accessibility),
+        styles["BodyText"]
+    ))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph(
+        f"<b>Best Practices:</b> {best_practices if best_practices is not None else 'N/A'} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
-        f"<b>SEO:</b> {lighthouse.get('seo', 'N/A')}",
+        _best_practices_message(best_practices),
+        styles["BodyText"]
+    ))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph(
+        f"<b>Technical SEO:</b> {seo_lh if seo_lh is not None else 'N/A'} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
-        f"<b>LCP:</b> {lighthouse.get('largest_contentful_paint', 'N/A')}",
+        _seo_message(seo_lh),
+        styles["BodyText"]
+    ))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph(
+        f"<b>Main content load time:</b> {lcp}",
         styles["BodyText"]
     ))
     story.append(Paragraph(
-        f"<b>CLS:</b> {lighthouse.get('cumulative_layout_shift', 'N/A')}",
-        styles["BodyText"]
-    ))
-    story.append(Paragraph(
-        f"<b>Speed Index:</b> {lighthouse.get('speed_index', 'N/A')}",
-        styles["BodyText"]
-    ))
-    story.append(Paragraph(
-        f"<b>Total Blocking Time:</b> {lighthouse.get('total_blocking_time', 'N/A')}",
+        _lcp_message(lcp),
         styles["BodyText"]
     ))
     story.append(Spacer(1, 12))
