@@ -4,6 +4,23 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.utils import ImageReader
 
+from reportlab.pdfgen import canvas
+
+def add_footer(canvas, doc):
+    canvas.saveState()
+
+    footer_text = "Hatch Studio | hatchstudio.com.au"
+    page_number = f"Page {doc.page}"
+
+    canvas.setFont("Helvetica", 9)
+
+    # left footer
+    canvas.drawString(40, 20, footer_text)
+
+    # right footer
+    canvas.drawRightString(570, 20, page_number)
+
+    canvas.restoreState()
 
 def build_pdf_report(summary: dict, output_path: Path) -> None:
     doc = SimpleDocTemplate(str(output_path), pagesize=LETTER)
@@ -49,9 +66,9 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
 
     story.append(Paragraph("<b>Hatch Studio</b>", styles["Heading2"]))
     story.append(Paragraph("Inner West Web Design & SEO", brand_style))
-    story.append(Paragraph("Website: hatchstudio.com.au", brand_style))
-    story.append(Paragraph("Email: james@hatchstudio.com.au", brand_style))
-    story.append(Paragraph("Phone: 0408 076 901", brand_style))
+    story.append(Paragraph("hatchstudio.com.au", brand_style))
+    story.append(Paragraph("james@hatchstudio.com.au", brand_style))
+    story.append(Paragraph("0408 076 901", brand_style))
     story.append(Spacer(1, 16))
 
     # -----------------------------
@@ -65,15 +82,15 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     # -----------------------------
     story.append(Paragraph("Website Scorecard", styles["Heading2"]))
     story.append(Paragraph(
-        f"<b>Total Score:</b> {scorecard.get('total_score', 0)} / 100",
+        f"Total Score: {scorecard.get('total_score', 0)} / 100",
         styles["BodyText"]
     ))
     story.append(Paragraph(
-        f"<b>Grade:</b> {grade}",
+        f"Grade: {grade}",
         styles["BodyText"]
     ))
     story.append(Paragraph(
-        f"<b>What this means:</b> {grade_message}",
+        f"What this means: {grade_message}",
         styles["BodyText"]
     ))
     story.append(Paragraph(
@@ -280,4 +297,8 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
         )
     )
 
-    doc.build(story)
+    doc.build(
+    story,
+    onFirstPage=add_footer,
+    onLaterPages=add_footer
+)
