@@ -4,6 +4,7 @@ from pathlib import Path
 from pdf_report import build_pdf_report
 from scorecard import calculate_score
 from lighthouse_audit import run_lighthouse
+from opportunity_summary import build_opportunity_summary
 
 from crawl import discover_top_pages
 from fetch_page import fetch_page
@@ -92,6 +93,7 @@ def main():
                 seo_summary["lighthouse"] = lighthouse_summary
             
             seo_summary["scorecard"] = calculate_score(seo_summary)
+            seo_summary["opportunity_summary"] = build_opportunity_summary(seo_summary)
 
             raw_schema_path = raw_schema_dir / f"{slug}_schema_blocks.json"
             raw_schema_path.write_text(

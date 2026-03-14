@@ -15,6 +15,7 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
     trust_signals = summary.get("trust_signals", {})
     scorecard = summary.get("scorecard", {})
     lighthouse = summary.get("lighthouse", {})
+    opportunity_summary = summary.get("opportunity_summary", {})
 
     story.append(Paragraph(f"Website Audit: {summary.get('url', 'Unknown URL')}", styles["Title"]))
     story.append(Spacer(1, 12))
@@ -122,6 +123,28 @@ def build_pdf_report(summary: dict, output_path: Path) -> None:
         f"<b>Total Blocking Time:</b> {lighthouse.get('total_blocking_time', 'N/A')}",
         styles["BodyText"]
     ))
+    story.append(Spacer(1, 12))
+
+    story.append(Paragraph("Opportunity Summary", styles["Heading2"]))
+
+    top_opportunities = opportunity_summary.get("top_opportunities", [])
+    potential_impact = opportunity_summary.get("potential_impact", [])
+
+    story.append(Paragraph("<b>Top Opportunities</b>", styles["BodyText"]))
+    if top_opportunities:
+        for item in top_opportunities:
+            story.append(Paragraph(f"• {item}", styles["BodyText"]))
+    else:
+        story.append(Paragraph("• No major opportunities identified.", styles["BodyText"]))
+
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("<b>Potential Impact</b>", styles["BodyText"]))
+    if potential_impact:
+        for item in potential_impact:
+            story.append(Paragraph(f"• {item}", styles["BodyText"]))
+    else:
+        story.append(Paragraph("• No major impact areas identified.", styles["BodyText"]))
+
     story.append(Spacer(1, 12))
 
     story.append(Paragraph("Initial Notes", styles["Heading2"]))

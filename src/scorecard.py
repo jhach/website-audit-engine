@@ -9,10 +9,12 @@ def get_grade_band(total_score: int) -> str:
         return "D"
     return "F"
 
+
 def calculate_score(summary: dict) -> dict:
     schema = summary.get("schema", {})
     trust = summary.get("trust_signals", {})
     location = summary.get("location_signals", {})
+    lighthouse = summary.get("lighthouse", {})
 
     title = summary.get("title") or ""
     meta_description = summary.get("meta_description") or ""
@@ -28,7 +30,7 @@ def calculate_score(summary: dict) -> dict:
     h1_has_local_term = summary.get("h1_has_local_term", False)
 
     # -----------------------
-    # On-page SEO (25)
+    # On-page SEO (20)
     # -----------------------
     seo_score = 0
     seo_notes = []
@@ -49,12 +51,12 @@ def calculate_score(summary: dict) -> dict:
         seo_notes.append("Missing meta description.")
 
     if 70 <= meta_length <= 155:
-        seo_score += 3
+        seo_score += 2
     else:
         seo_notes.append("Meta description length is not ideal.")
 
     if h1:
-        seo_score += 4
+        seo_score += 3
     else:
         seo_notes.append("Missing H1.")
 
@@ -64,14 +66,14 @@ def calculate_score(summary: dict) -> dict:
         seo_notes.append("H1 count is not ideal.")
 
     if canonical:
-        seo_score += 3
+        seo_score += 2
     else:
         seo_notes.append("Missing canonical tag.")
 
     if word_count >= 300:
-        seo_score += 4
-    elif word_count >= 200:
         seo_score += 2
+    elif word_count >= 200:
+        seo_score += 1
         seo_notes.append("Page copy is a bit thin.")
     else:
         seo_notes.append("Page copy is thin.")
@@ -111,23 +113,23 @@ def calculate_score(summary: dict) -> dict:
         local_notes.append("No local term found in H1.")
 
     # -----------------------
-    # Trust & conversion (25)
+    # Trust & conversion (20)
     # -----------------------
     trust_score = 0
     trust_notes = []
 
     if trust.get("phone_found"):
-        trust_score += 4
+        trust_score += 3
     else:
         trust_notes.append("Phone number not detected.")
 
     if trust.get("email_found"):
-        trust_score += 3
+        trust_score += 2
     else:
         trust_notes.append("Email address not detected.")
 
     if trust.get("address_found"):
-        trust_score += 4
+        trust_score += 3
     else:
         trust_notes.append("Address or service area signals not detected.")
 
@@ -142,12 +144,12 @@ def calculate_score(summary: dict) -> dict:
         trust_notes.append("Testimonials or reviews not detected.")
 
     if trust.get("privacy_policy_found"):
-        trust_score += 2
+        trust_score += 1
     else:
         trust_notes.append("Privacy policy not detected.")
 
     if trust.get("booking_system_detected"):
-        trust_score += 4
+        trust_score += 3
     else:
         trust_notes.append("Booking or enquiry CTA not detected.")
 
@@ -180,39 +182,33 @@ def calculate_score(summary: dict) -> dict:
         schema_notes.append("No LocalBusiness schema detected.")
 
     # -----------------------
-    # UX / presentation baseline (15)
+    # Performance / UX (25)
     # -----------------------
-    ux_score = 0
     ux_notes = []
 
-    if summary.get("h2_count", 0) >= 2:
-        ux_score += 3
+    perf = lighthouse.get("performance")
+    access = lighthouse.get("accessibility")
+    best = lighthouse.get("best_practices")
+    seo_lh = lighthouse.get("seo")
+
+    lh_values = [v for v in [perf, access, best, seo_lh] if isinstance(v, int)]
+    if lh_values:
+        lh_average = sum(lh_values) / len(lh_values)
+        ux_score = round((lh_average / 100) * 25)
     else:
-        ux_notes.append("Low heading structure depth.")
+        ux_score = 0
+        ux_notes.append("No Lighthouse data detected.")
 
-    if summary.get("desktop_screenshot"):
-        ux_score += 1
-
-    if summary.get("mobile_screenshot"):
-        ux_score += 1
-
-    if trust.get("contact_form_found") or trust.get("booking_system_detected"):
-        ux_score += 4
-    else:
-        ux_notes.append("Weak conversion path.")
-
-    if trust.get("testimonials_found"):
-        ux_score += 3
-    else:
-        ux_notes.append("Weak visible trust proof.")
-
-    if h1_count == 1:
-        ux_score += 3
-    else:
-        ux_notes.append("Heading hierarchy may be messy.")
+    if perf is not None and perf < 70:
+        ux_notes.append("Performance score is below recommended threshold.")
+    if access is not None and access < 85:
+        ux_notes.append("Accessibility score could be improved.")
+    if best is not None and best < 85:
+        ux_notes.append("Best practices score could be improved.")
+    if seo_lh is not None and seo_lh < 90:
+        ux_notes.append("Lighthouse SEO score could be improved.")
 
     total = seo_score + local_score + trust_score + schema_score + ux_score
-
     grade_band = get_grade_band(total)
 
     return {
