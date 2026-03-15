@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.main import run_audit
+from main import run_audit
 
 
 INPUT_CSV = Path("businesses.csv")

@@ -1,0 +1,19 @@
+{
+  "total_pages_audited": 5,
+  "missing_titles": [],
+  "missing_meta_descriptions": [],
+  "missing_h1s": [],
+  "missing_canonicals": [],
+  "pages_without_schema": [],
+  "pages_without_local_business_schema": [
+    "https://hatchstudio.com.au",
+    "https://hatchstudio.com.au/about",
+    "https://hatchstudio.com.au/services",
+    "https://hatchstudio.com.au/contact",
+    "https://hatchstudio.com.au/quote"
+  ],
+  "thin_pages_under_250_words": [],
+  "pages_missing_all_broad_terms": [],
+  "pages_missing_all_priority_suburbs": [],
+  "pages_missing_all_suburbs": []
+}

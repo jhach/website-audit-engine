@@ -1,0 +1,27 @@
+[
+  {
+    "url": "https://openai.com",
+    "slug": "home",
+    "error": "Command '['node', '-e', \"\\nconst { chromium } = require('playwright');\\n\\n(async() => {\\n\\n  const browser = await chromium.launch({ headless: true });\\n\\n  // Desktop screenshot\\n  const desktopPage = await browser.newPage({\\n    viewport: { width: 1440, height: 2200 }\\n  });\\n\\n  await desktopPage.goto('https://openai.com', { waitUntil: 'networkidle', timeout: 30000 });\\n\\n  await desktopPage.screenshot({\\n    path: 'reports/openai/raw/screenshots/home_desktop.png',\\n    fullPage: true\\n  });\\n\\n  // Mobile screenshot\\n  const mobilePage = await browser.newPage({\\n    viewport: { width: 390, height: 844 },\\n    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)'\\n  });\\n\\n  await mobilePage.goto('https://openai.com', { waitUntil: 'networkidle', timeout: 30000 });\\n\\n  await mobilePage.screenshot({\\n    path: 'reports/openai/raw/screenshots/home_mobile.png',\\n    fullPage: true\\n  });\\n\\n  await browser.close();\\n\\n})();\\n\"]' returned non-zero exit status 1."
+  },
+  {
+    "url": "https://openai.com/research/index",
+    "slug": "research-index",
+    "error": "Command '['node', '-e', \"\\nconst { chromium } = require('playwright');\\n\\n(async() => {\\n\\n  const browser = await chromium.launch({ headless: true });\\n\\n  // Desktop screenshot\\n  const desktopPage = await browser.newPage({\\n    viewport: { width: 1440, height: 2200 }\\n  });\\n\\n  await desktopPage.goto('https://openai.com/research/index', { waitUntil: 'networkidle', timeout: 30000 });\\n\\n  await desktopPage.screenshot({\\n    path: 'reports/openai/raw/screenshots/research-index_desktop.png',\\n    fullPage: true\\n  });\\n\\n  // Mobile screenshot\\n  const mobilePage = await browser.newPage({\\n    viewport: { width: 390, height: 844 },\\n    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)'\\n  });\\n\\n  await mobilePage.goto('https://openai.com/research/index', { waitUntil: 'networkidle', timeout: 30000 });\\n\\n  await mobilePage.screenshot({\\n    path: 'reports/openai/raw/screenshots/research-index_mobile.png',\\n    fullPage: true\\n  });\\n\\n  await browser.close();\\n\\n})();\\n\"]' returned non-zero exit status 1."
+  },
+  {
+    "url": "https://openai.com/business",
+    "slug": "business",
+    "error": "403 Client Error: Forbidden for url: https://openai.com/business"
+  },
+  {
+    "url": "https://openai.com/api",
+    "slug": "api",
+    "error": "Command '['node', '-e', \"\\nconst { chromium } = require('playwright');\\n\\n(async() => {\\n\\n  const browser = await chromium.launch({ headless: true });\\n\\n  // Desktop screenshot\\n  const desktopPage = await browser.newPage({\\n    viewport: { width: 1440, height: 2200 }\\n  });\\n\\n  await desktopPage.goto('https://openai.com/api', { waitUntil: 'networkidle', timeout: 30000 });\\n\\n  await desktopPage.screenshot({\\n    path: 'reports/openai/raw/screenshots/api_desktop.png',\\n    fullPage: true\\n  });\\n\\n  // Mobile screenshot\\n  const mobilePage = await browser.newPage({\\n    viewport: { width: 390, height: 844 },\\n    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)'\\n  });\\n\\n  await mobilePage.goto('https://openai.com/api', { waitUntil: 'networkidle', timeout: 30000 });\\n\\n  await mobilePage.screenshot({\\n    path: 'reports/openai/raw/screenshots/api_mobile.png',\\n    fullPage: true\\n  });\\n\\n  await browser.close();\\n\\n})();\\n\"]' returned non-zero exit status 1."
+  },
+  {
+    "url": "https://openai.com/about",
+    "slug": "about",
+    "error": "Command '['node', '-e', \"\\nconst { chromium } = require('playwright');\\n\\n(async() => {\\n\\n  const browser = await chromium.launch({ headless: true });\\n\\n  // Desktop screenshot\\n  const desktopPage = await browser.newPage({\\n    viewport: { width: 1440, height: 2200 }\\n  });\\n\\n  await desktopPage.goto('https://openai.com/about', { waitUntil: 'networkidle', timeout: 30000 });\\n\\n  await desktopPage.screenshot({\\n    path: 'reports/openai/raw/screenshots/about_desktop.png',\\n    fullPage: true\\n  });\\n\\n  // Mobile screenshot\\n  const mobilePage = await browser.newPage({\\n    viewport: { width: 390, height: 844 },\\n    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)'\\n  });\\n\\n  await mobilePage.goto('https://openai.com/about', { waitUntil: 'networkidle', timeout: 30000 });\\n\\n  await mobilePage.screenshot({\\n    path: 'reports/openai/raw/screenshots/about_mobile.png',\\n    fullPage: true\\n  });\\n\\n  await browser.close();\\n\\n})();\\n\"]' returned non-zero exit status 1."
+  }
+]
