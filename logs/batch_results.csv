@@ -1,3 +1,0 @@
-business_name,website,status,site_score,grade,output_folder,markdown_report,pdf_report,error
-Hatch Studio,https://hatchstudio.com.au,success,82,,reports/hatch-studio,reports/hatch-studio/report/audit_report.md,reports/hatch-studio/report/audit_report.pdf,
-OpenAI,https://openai.com,partial,,,reports/openai,,,
